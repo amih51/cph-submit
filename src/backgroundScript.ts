@@ -4,6 +4,8 @@ import { CphSubmitResponse, CphEmptyResponse } from './types';
 import { handleSubmit } from './handleSubmit';
 import log from './log';
 
+declare const chrome: any;
+
 const mainLoop = async () => {
     let cphResponse;
     try {
@@ -31,7 +33,7 @@ const mainLoop = async () => {
 
     if (response.empty) {
         log('Got empty valid response from CPH');
-
+        
         return;
     }
 
@@ -45,3 +47,14 @@ const mainLoop = async () => {
 };
 
 setInterval(mainLoop, config.loopTimeOut);
+
+chrome.runtime.onInstalled.addListener(() => {
+    chrome.alarms.create('keepAlive', { periodInMinutes: 1 });
+});
+
+chrome.alarms.onAlarm.addListener((alarm: { name: string }) => {
+    if (alarm.name === 'keepAlive') {
+        console.log('Service worker woke up by alarm');
+        mainLoop(); 
+    }
+});
